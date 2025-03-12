@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 from typing import List, Dict, Set, Optional
@@ -49,7 +48,7 @@ class ScraperAgent:
             r'/detail/',
         ]
     
-    async def scrape_website(self, start_url: str) -> List[Product]:
+    def scrape_website(self, start_url: str) -> List[Product]:
         """
         Scrape a website starting from the given URL.
         
@@ -77,7 +76,7 @@ class ScraperAgent:
             self.visited_urls.add(current_url)
             
             # Get HTML content with browser rendering as configured
-            html = await self.zyte_client.get_html(current_url, browser=self.use_browser)
+            html = self.zyte_client.get_html(current_url, browser=self.use_browser)
             if not html:
                 logger.warning(f"Failed to retrieve HTML content for URL: {current_url}")
                 continue
@@ -92,7 +91,7 @@ class ScraperAgent:
             if depth < self.max_depth:
                 # We don't pass browser parameter here because find_links already uses
                 # the HTML we fetched with browser rendering if that option was enabled
-                links = await self.zyte_client.find_links(current_url)
+                links = self.zyte_client.find_links(current_url)
                 
                 for link in links:
                     # Only follow links from the same domain
@@ -112,8 +111,8 @@ class ScraperAgent:
         Returns:
             List of extracted products
         """
-        # Using asyncio.run instead of get_event_loop() for better compatibility
-        return asyncio.run(self.scrape_website(start_url))
+        # Call the synchronous scrape_website method directly
+        return self.scrape_website(start_url)
     
     def _is_product_page(self, url: str, html: str) -> bool:
         """
