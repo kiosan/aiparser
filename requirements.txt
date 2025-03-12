@@ -1,0 +1,6 @@
+requests
+zyte-api>=0.7.0
+beautifulsoup4
+lxml>=4.6.0
+dataclasses-json
+python-dotenv
