@@ -6,7 +6,7 @@ A Python agent that scrapes websites for product information using the Zyte API.
 
 - Website crawling to discover product pages
 - HTML retrieval using Zyte API with browser rendering
-- HTML minimization for efficient processing
+- HTML minimization for efficient processing including comment removal and base64 decoding
 - Structured product information extraction including images
 - Configurable scraping parameters and timeout handling
 - Error resilience and fallback options
@@ -48,7 +48,7 @@ from scraper.agent import ScraperAgent
 # Initialize the agent with browser rendering enabled (default)
 agent = ScraperAgent(use_browser=True)
 
-# Start scraping a website (synchronous version)
+# Start scraping a website
 products = agent.scrape_website_sync("https://example.com")
 
 # Process the products
@@ -68,7 +68,20 @@ python examples/html_minimizer_example.py https://example.com -u --no-browser -o
 
 # Control request timeout
 python examples/html_minimizer_example.py https://example.com -u --timeout 20
+
+# Process a local HTML file
+python examples/html_minimizer_example.py path/to/file.html
 ```
+
+### HTML Minimization Features
+
+The HTML minimizer performs several optimizations:
+
+- **Removes unnecessary elements**: SVG, scripts, styles, forms, buttons, etc.
+- **Strips HTML comments**: All comments including multi-line and conditional comments
+- **Handles base64 encoded content**: Automatically detects and decodes base64 encoded responses
+- **Removes unnecessary attributes**: Preserves only essential attributes like src, href, and title
+- **Removes elements with data URLs**: Eliminates embedded images and resources
 
 ## Troubleshooting
 
@@ -87,7 +100,12 @@ python examples/html_minimizer_example.py https://example.com -u --timeout 20
    - HTML minimization significantly reduces memory usage
    - For large websites, consider processing in batches
 
-4. **Python 3.13 Compatibility**:
+4. **Base64 Encoded Content**:
+   - Some APIs return HTML content as base64 encoded strings
+   - The minimizer will automatically attempt to decode this content
+   - If decoding fails, an error message will be shown
+
+5. **Python 3.13 Compatibility**:
    - This project is compatible with Python 3.13 and higher
    - Some dependencies might require specific versions in requirements.txt
 
