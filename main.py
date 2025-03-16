@@ -56,7 +56,7 @@ def scrape_website(url: str, scrape_type: str, use_browser: bool) -> Dict[str, A
     logger.info(f"Browser rendering: {'enabled' if use_browser else 'disabled'}")
     
     # Initialize OpenAI agent
-    openai_agent = OpenAIAgent()
+    openai_agent = OpenAIAgent(browser=use_browser)
     
     # Extract information based on the specified type
     result = {}

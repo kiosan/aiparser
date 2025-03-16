@@ -6,6 +6,18 @@
 # - Lines starting with # are comments and will be ignored
 # - Keys should only contain uppercase letters, numbers, and underscores
 
+[EXTRACT_PRODUCT_URLS]
+Extract UAV/UAS-related product URLs in JSON format from the website pages at {url}.
+If available, extract also urls of components for UAV/UAS, like payloads, cameras, radio, etc.
+Fetch all available product URLs.
+Fetch HTML content from all necessary pages to get all product URLs.
+Go deep and fetch internal pages of the website to find all URLs of each products found.
+Return a list of all product page URLs found on the site in JSON format without any additional text.
+Result JSON format:
+{
+    "product_urls": [{"url": "<url>", "product_name": "<product_name>"}]
+}
+
 [PRODUCT_EXTRACTION]
 You are a product information extraction assistant. Analyze the provided HTML content and extract the following details about the product:
 1. Product name

@@ -39,7 +39,7 @@ class FunctionArgs(BaseModel):
 class OpenAIAgent:
     """Agent for processing website content using OpenAI API."""
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4o", prompts_file: str = "prompts.txt"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "o3-mini", prompts_file: str = "prompts.txt", browser: bool = False):
         """
         Initialize the OpenAI Agent.
         
@@ -53,6 +53,7 @@ class OpenAIAgent:
             raise ValueError("OpenAI API key is required. Set it via OPENAI_API_KEY environment variable or constructor parameter.")
         
         self.model = model
+        self.browser = browser
         self.prompts_file = prompts_file
         logger.debug(f"Initializing OpenAI client with model: {self.model}")
         
@@ -64,53 +65,41 @@ class OpenAIAgent:
         logger.debug("OpenAI Agent initialized successfully")
     
     @function_tool(name_override="get_page_content")
-    async def get_page_content(ctx: RunContextWrapper[Any], url: str) -> str:
-        logger.info(f"Fetching HTML content from {url}")
+    def get_page_content(ctx: RunContextWrapper[Any], url: str) -> str:
+        logger.error(f"Fetching HTML content from {url}")
         zyte_client = ZyteClient()
         html_content = zyte_client.get_html(url, browser=True)  # Using browser-rendered content
         if not html_content:
             logger.error("Failed to retrieve HTML content")
             return {"error": "Failed to retrieve HTML content"}
-    
+        
         # Process HTML content
         processed_html = HtmlProcessor.minimize_html(html_content)
         return processed_html
-    
-    def dynamic_instructions(
-        self, context: RunContextWrapper[AgentContext], agent: Agent[AgentContext]
-    ) -> str:
-        return f"The website URL is {context.context.website_url}. Extract product urls in JSON format from given website HTML content."
-    
-    async def run_function(ctx: RunContextWrapper[Any], args: str) -> str:
-        parsed = FunctionArgs.model_validate_json(args)
-        logger.debug(f"Running function with arguments: {parsed}")
-        return await self.get_page_content(f"{parsed.url}")
-
-    async def run(self, url: str) -> Dict[str, Any]:
-        # Format the tool properly with name and description
-        logger.debug(f"Creating fetch content tool: {FunctionArgs.model_json_schema()}")
-        fetch_content_tool = FunctionTool(
-            name="get_page_content",
-            description="Fetches HTML content from a specified URL",
-            params_json_schema=FunctionArgs.model_json_schema(),
-            on_invoke_tool=self.run_function,
             
-        )
-        
+    async def run(self, url: str) -> Dict[str, Any]:
         # Initialize the agent with proper parameters
+        # Get the product URLs extraction prompt from the prompts file
+        prompt = get_prompt("EXTRACT_PRODUCT_URLS", self.prompts_file)
+        if not prompt:
+            logger.warning("Product URLs extraction prompt not found, using default prompt")
+            prompt = f"Extract product URLs in JSON format from the website at {url}.\n\nReturn a list of all product page URLs found on the site in JSON format without any additional text."
+        else:
+            # Replace the URL placeholder with the actual URL
+            prompt = prompt.replace("{url}", url)
+            
         agent = Agent[AgentContext](
             name="Website processor",
-            instructions=f"Extract product URLs in JSON format from the website at {url}.\n\nReturn a list of all product page URLs found on the site in JSON format without any additional text.",
+            instructions=prompt,
             tools=[self.get_page_content],
             model="o3-mini",
-
         )
 
         website_context = AgentContext(website_url=url, product_urls=[], company_info={})
         
         result = await Runner.run(
             starting_agent=agent, 
-            input="Start with fetching HTML content from the website.",
+            input="Start with fetching HTML from all necessary pages of the website.",
             context=website_context,
         )
         

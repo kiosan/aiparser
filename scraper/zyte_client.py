@@ -18,6 +18,15 @@ load_dotenv()
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Set up more detailed logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Set this module's logger level to DEBUG for maximum visibility
+logger.setLevel(logging.DEBUG)
+
 class ZyteClient:
     """Client for interacting with the Zyte API."""
     
@@ -61,9 +70,10 @@ class ZyteClient:
         """
         try:
             # Log attempt with detailed information
-            logger.info(f"Fetching URL with Zyte API: {url}")
-            logger.info(f"Browser rendering: {'enabled' if browser else 'disabled'}")
-            logger.info(f"Timeout: {timeout} seconds")
+            logger.debug(f"============================================================")
+            logger.debug(f"ZYTE CLIENT: Fetching URL with Zyte API: {url}")
+            logger.debug(f"ZYTE CLIENT: Browser rendering: {'enabled' if browser else 'disabled'}")
+            logger.debug(f"ZYTE CLIENT: Timeout: {timeout} seconds")
             
             # Create request payload
             payload = {
@@ -81,11 +91,11 @@ class ZyteClient:
                 payload["headers"] = headers
             
             # Log the request payload
-            logger.debug(f"Request payload: {json.dumps(payload, indent=2)}")
+            logger.info(f"ZYTE CLIENT: Request payload: {json.dumps(payload, indent=2)}")
             
             # Make the API request
             start_time = time.time()
-            logger.debug(f"Sending request to {self.API_URL}")
+            logger.info(f"ZYTE CLIENT: Sending request to {self.API_URL}")
             
             response = requests.post(
                 self.API_URL,
@@ -96,8 +106,8 @@ class ZyteClient:
             )
             
             elapsed = time.time() - start_time
-            logger.debug(f"Request completed in {elapsed:.2f} seconds")
-            logger.debug(f"Status code: {response.status_code}")
+            logger.info(f"ZYTE CLIENT: Request completed in {elapsed:.2f} seconds")
+            logger.info(f"ZYTE CLIENT: Status code: {response.status_code}")
             
             # Check if request was successful
             if response.status_code == 200:
@@ -113,32 +123,40 @@ class ZyteClient:
                     
                     if html_content:
                         content_length = len(html_content)
-                        logger.info(f"Retrieved HTML content ({content_length} bytes) from URL: {url}")
+                        logger.info(f"ZYTE CLIENT: Retrieved HTML content ({content_length} bytes) from URL: {url}")
+                        # Log a sample of the HTML content for debugging
+                        html_preview = html_content[:200].replace('\n', ' ').strip()
+                        logger.info(f"ZYTE CLIENT: HTML content preview: {html_preview}...")
                         return html_content
                     else:
                         available_keys = list(data.keys())
-                        logger.warning(f"No HTML content found in response. Available keys: {available_keys}")
+                        logger.warning(f"ZYTE CLIENT: No HTML content found in response. Available keys: {available_keys}")
+                        # Log the full response for debugging
+                        logger.warning(f"ZYTE CLIENT: Full response: {json.dumps(data)[:500]}...")
                         return None
                         
                 except ValueError:
-                    logger.error("Response is not valid JSON")
-                    logger.error(f"Raw response (first 200 chars): {response.text[:200]}")
+                    logger.error("ZYTE CLIENT: Response is not valid JSON")
+                    logger.error(f"ZYTE CLIENT: Raw response (first 200 chars): {response.text[:200]}")
                     return None
             else:
-                logger.error(f"Request failed with status code: {response.status_code}")
-                logger.error(f"Error response: {response.text}")
+                logger.error(f"ZYTE CLIENT: Request failed with status code: {response.status_code}")
+                logger.error(f"ZYTE CLIENT: Error response: {response.text}")
                 return None
                 
         except requests.Timeout:
-            logger.error(f"Request timed out after {timeout} seconds")
+            logger.error(f"ZYTE CLIENT: Request timed out after {timeout} seconds")
             return None
         except requests.RequestException as e:
-            logger.error(f"Request error: {type(e).__name__}: {str(e)}")
+            logger.error(f"ZYTE CLIENT: Request error: {type(e).__name__}: {str(e)}")
             return None
         except Exception as e:
-            logger.error(f"Unexpected error: {type(e).__name__}: {str(e)}")
-            logger.error(f"Traceback: {''.join(traceback.format_exception(type(e), e, e.__traceback__))}")
+            logger.error(f"ZYTE CLIENT: Unexpected error: {type(e).__name__}: {str(e)}")
+            logger.error(f"ZYTE CLIENT: Traceback: {''.join(traceback.format_exception(type(e), e, e.__traceback__))}")
             return None
+        finally:
+            logger.info(f"ZYTE CLIENT: Request to {url} completed")
+            logger.info(f"============================================================")
             
     def test_connection(self) -> Tuple[bool, str]:
         """
