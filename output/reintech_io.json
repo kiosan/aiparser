@@ -1,0 +1,56 @@
+{
+  "product": {
+    "product_name": "Hire Developers for SaaS teams - Software Developers as a Service | Reintec",
+    "price": "Negotiable",
+    "description": "Reintec empowers engineering managers, VPs, and CTOs to harness the potential of remote developers and build high-performing teams. Job done seamlessly with our worry-free recruitment process, custom vetting solutions, and HR support services.",
+    "features": [
+      "Transparently communicate challenges and opportunities.",
+      "Tailored development fit for specific recruitment needs.",
+      "Internal software with AI automated processes.",
+      "Rely on cultural or communication challenges."
+    ],
+    "specifications": [
+      "Comprehensive hiring process.",
+      "Handling payroll, HR, and legal.",
+      "Focus on technical performance."
+    ],
+    "images_urls": [
+      "https://reintec.io/assets/logo/reintec_icon_2-2907f58f504605ac997fd4c39dfd084ba1e7ddf7a3fc27566bff3f0a6116ba5a.png",
+      "https://reintec.io/assets/img/hero-img-1-225e7c270a76800152ea4015bef8e18902948dac63bbd0a4bb3546038dfe3da8.svg",
+      "https://reintec.io/assets/img/hero-img-3-fcc83b85780a85f73ffb503a89522c55101d1e935471a82dde6ad5089640c1b.svg",
+      "https://reintec.io/assets/img/hero-img-4-8871d732db7198e5f06b37b4f94b3a06f6c5f40dc11a04f1ef9519b17087014e.svg",
+      "https://reintec.io/assets/img/hero-img-2-f04509439335ec9633407929cf15b8447e0fb7341abd3c71fff8dc2e40e2ccd3.svg"
+    ],
+    "categories": [
+      "Technology",
+      "Recruitment",
+      "Software",
+      "Remote Work"
+    ],
+    "brand": "Reintec",
+    "availability": "Available"
+  },
+  "company": {
+    "company_name": "Reintech",
+    "description": "Reintech empowers engineering managers, VPs, and CTOs to harness the potential of remote developers and build high-performing teams. They provide worry-free recruitment processes, custom vetting solutions, and HR support services. Their focus is on helping clients build technology teams quickly and efficiently by providing access to motivated candidates.",
+    "contact_information": {
+      "phone": null,
+      "email": null,
+      "address": null
+    },
+    "social_media_links": [],
+    "services_or_products_offered": [
+      "Software developers as a service",
+      "Engineering recruitment",
+      "Remote developers",
+      "Team building"
+    ],
+    "team_members": null,
+    "company_history_or_founding_date": null
+  },
+  "metadata": {
+    "url": "https://reintech.io",
+    "timestamp": "2025-03-16T14:42:23.636114",
+    "scrape_type": "auto"
+  }
+}

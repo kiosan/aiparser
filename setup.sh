@@ -25,5 +25,4 @@ else
 fi
 
 echo "Setup complete! You can now run the scraper with:"
-echo "source venv/bin/activate"
-echo "python examples/html_minimizer_example.py https://example.com -u"
+echo "docker-compose run scraper https://example.com"

@@ -1,114 +1,93 @@
-# Web Scraping Agent
+# Web Scraper with OpenAI Agents and Zyte Client
 
-A Python agent that scrapes websites for product information using the Zyte API.
+This project integrates OpenAI Agents with Zyte Client to scan websites for products and company details, storing the results in JSON format.
 
-## Features
+## Project Structure
 
-- Website crawling to discover product pages
-- HTML retrieval using Zyte API with browser rendering
-- HTML minimization for efficient processing including comment removal and base64 decoding
-- Structured product information extraction including images
-- Configurable scraping parameters and timeout handling
-- Error resilience and fallback options
+```
+.
+├── .env                 # Environment variables (API keys)
+├── .env.example         # Example environment variables file
+├── Dockerfile           # Docker configuration
+├── docker-compose.yml   # Docker Compose configuration
+├── requirements.txt     # Python dependencies
+├── setup.sh             # Setup script for local development
+└── scraper/
+    ├── __init__.py
+    ├── html_processor.py  # HTML processing utilities
+    ├── zyte_client.py     # Zyte API client
+    ├── openai_agent.py    # OpenAI Agent implementation
+    └── main.py            # Main application entry point
+```
 
 ## Setup
 
-1. Clone this repository
-2. Install dependencies:
+### Local Development
+
+1. Create a virtual environment:
    ```
-   pip install -r requirements.txt
+   ./setup.sh
    ```
-3. Create a `.env` file with your Zyte API key:
+
+2. Activate the virtual environment:
    ```
-   ZYTE_API_KEY=your_api_key_here
+   source venv/bin/activate
+   ```
+
+3. Add your API keys to the `.env` file:
+   ```
+   ZYTE_API_KEY=your_zyte_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+### Using Docker
+
+1. Add your API keys to the `.env` file (same as above)
+
+2. Build the Docker image:
+   ```
+   docker-compose build
+   ```
+
+3. Run the scraper with Docker:
+   ```
+   docker-compose run scraper https://example.com
    ```
 
 ## Usage
 
-### Testing the Zyte API Connection
+### Command Line Arguments
 
-First, verify your API connection is working correctly:
-
-```bash
-# Run the comprehensive test suite
-./run_tests.sh
-
-# Or run a specific test directly
-python3 tests/integration/test_zyte_api.py https://example.com --timeout 15
-
-# Run unit tests
-python3 -m unittest discover -s tests/unit
+```
+python -m scraper.main [URL] [OPTIONS]
 ```
 
-### Using the Scraper Agent
+Options:
+- `--output`, `-o`: Output directory for scraped data (default: "output")
+- `--type`, `-t`: Type of information to extract: "product", "company", or "auto" (default: "auto")
+- `--browser`, `-b`: Use browser rendering for scraping
+- `--verbose`, `-v`: Enable verbose output
 
-```python
-from scraper.agent import ScraperAgent
+### Examples
 
-# Initialize the agent with browser rendering enabled (default)
-agent = ScraperAgent(use_browser=True)
+1. Scrape product information from a website:
+   ```
+   python -m scraper.main https://example.com/product --type product
+   ```
 
-# Start scraping a website
-products = agent.scrape_website_sync("https://example.com")
+2. Scrape company information with browser rendering:
+   ```
+   python -m scraper.main https://example.com --type company --browser
+   ```
 
-# Process the products
-for product in products:
-    print(f"Product: {product.name}, Price: {product.price}")
-    print(f"Images: {product.images}")
+3. Run with Docker:
+   ```
+   docker-compose run scraper https://example.com --type auto --browser
+   ```
+
+## Output
+
+The scraped data is saved as JSON files in the output directory. The filename is generated based on the domain and timestamp:
 ```
-
-### HTML Minimization Example
-
-```bash
-# Fetch a URL, minimize the HTML and output to console
-python examples/html_minimizer_example.py https://example.com -u
-
-# Save to file and disable browser rendering (faster)
-python examples/html_minimizer_example.py https://example.com -u --no-browser -o output.html
-
-# Control request timeout
-python examples/html_minimizer_example.py https://example.com -u --timeout 20
-
-# Process a local HTML file
-python examples/html_minimizer_example.py path/to/file.html
+output/example_com_20250315_165400.json
 ```
-
-### HTML Minimization Features
-
-The HTML minimizer performs several optimizations:
-
-- **Removes unnecessary elements**: SVG, scripts, styles, forms, buttons, etc.
-- **Strips HTML comments**: All comments including multi-line and conditional comments
-- **Handles base64 encoded content**: Automatically detects and decodes base64 encoded responses
-- **Removes unnecessary attributes**: Preserves only essential attributes like src, href, and title
-- **Removes elements with data URLs**: Eliminates embedded images and resources
-
-## Troubleshooting
-
-### Common Issues
-
-1. **API Connection Errors**:
-   - Verify your Zyte API key in the `.env` file
-   - Check that your Zyte account has an active subscription
-   - Try running with `--no-browser` flag which uses less resources
-
-2. **Timeouts**:
-   - Increase the timeout parameter: `--timeout 30` or higher
-   - Some sites may take longer to render with browser rendering
-
-3. **Memory Usage**:
-   - HTML minimization significantly reduces memory usage
-   - For large websites, consider processing in batches
-
-4. **Base64 Encoded Content**:
-   - Some APIs return HTML content as base64 encoded strings
-   - The minimizer will automatically attempt to decode this content
-   - If decoding fails, an error message will be shown
-
-5. **Python 3.13 Compatibility**:
-   - This project is compatible with Python 3.13 and higher
-   - Some dependencies might require specific versions in requirements.txt
-
-## License
-
-MIT

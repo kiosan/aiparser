@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  scraper:
+    build: .
+    volumes:
+      - ./output:/app/output
+      - ./.env:/app/.env:ro
+    command: --output output --verbose
+    # Override the entrypoint from Dockerfile to wait for a URL argument
+    entrypoint: ["python", "-m", "main"]
+    # Add URL argument when running: docker-compose run scraper https://example.com

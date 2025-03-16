@@ -1,15 +1,19 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="aidrones-scraper",
+    name="scraper",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "beautifulsoup4>=4.9.0",
-        "python-dotenv>=0.15.0",
+        "requests",
+        "zyte-api>=0.7.0",
+        "beautifulsoup4",
         "lxml>=4.6.0",
-        "aiohttp>=3.7.0",
-        "zyte-api>=0.8.0",
+        "dataclasses-json",
+        "python-dotenv",
+        "openai>=1.0.0",
+        "argparse",
+        "urllib3"
     ],
     python_requires=">=3.8",
 )
