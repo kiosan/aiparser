@@ -14,7 +14,7 @@ This project integrates OpenAI Agents with Zyte Client to scan websites for prod
 ├── processed.txt        # Tracks processed websites with product counts
 ├── requirements.txt     # Python dependencies
 ├── setup.sh             # Setup script for local development
-├── uavs.txt             # List of URLs to process in batch mode
+├── urls.txt             # List of URLs to process in batch mode
 └── scraper/
     ├── __init__.py
     ├── html_processor.py  # HTML processing utilities
@@ -75,17 +75,17 @@ Options:
 
 1. Scrape product information from a website:
    ```
-   python -m scraper.main https://example.com/product --type product
+   python -m scraper.main https://example.com/product 
    ```
 
 2. Scrape company information with browser rendering:
    ```
-   python -m scraper.main https://example.com --type company --browser
+   python -m scraper.main https://example.com --browser
    ```
 
 3. Run with Docker:
    ```
-   docker-compose run scraper https://example.com --type auto --browser
+   docker-compose run scraper https://example.com  --browser
    ```
 
 ### Batch Processing
@@ -97,7 +97,7 @@ python batch_scraper.py [OPTIONS]
 ```
 
 Options:
-- `--file`: File containing URLs to process, one per line (default: "uavs.txt")
+- `--file`: File containing URLs to process, one per line (default: "urls.txt")
 - `--output`: Output directory for results (default: "output")
 - `--type`: Type of scraper to use (auto, agent, manual) (default: "auto")
 - `--browser`: Use browser rendering for scraping (default: true)
@@ -125,7 +125,7 @@ The batch scraper includes a processing tracking system:
 
 Example of batch processing:
 ```
-python batch_scraper.py --file uavs.txt --output output --retries 3
+python batch_scraper.py --file urls.txt --output output --retries 3
 ```
 
 ## Output

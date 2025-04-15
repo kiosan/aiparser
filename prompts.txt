@@ -7,16 +7,16 @@
 # - Keys should only contain uppercase letters, numbers, and underscores
 
 [EXTRACT_PRODUCT_URLS]
-Task: Fetch All UAV/UAS Product URLs and Extract Producer Information
-Begin from the provided URL ({url}). Explore the entire website thoroughly, including all internal pages, to find URLs linking directly to UAV/UAS products.
+Task: Fetch All Product URLs and Extract Producer Information
+Begin from the provided URL ({url}). Explore the entire website thoroughly, including all internal pages, to find URLs linking directly to products.
 
 Stop and return blank JSON if no content found.
 
 Recursively parse internal pages to ensure no product URLs are missed.
-Collect all discovered UAV/UAS product URLs, including deeply nested ones.
+Collect all discovered product URLs, including deeply nested ones.
 Return the complete list of product page URLs clearly formatted in JSON.
 
-Return blank JSON if given website is not a drone producer website.
+Return blank JSON if given website is not a producer website.
 
 Additionally, analyze the HTML content of the provided website to extract detailed company information:
 1. Company name
@@ -55,8 +55,8 @@ Result JSON format:
   }
 
 [PRODUCT_EXTRACTION]
-Task: Extract UAV/UAS Product Information from HTML
-UAV/UAS name: {name}
+Task: Extract Product Information from HTML
+Product name: {name}
 You are a product information extraction assistant. 
 Analyze the provided HTML content from the {url} and extract the following details about the product:
 1. Product name
