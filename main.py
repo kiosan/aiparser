@@ -70,16 +70,16 @@ def scrape_website(url: str, scrape_type: str, use_browser: bool) -> Dict[str, A
         if isinstance(res, str):
             parsed_data = json.loads(res)
             if "product_urls" in parsed_data:
-                result["product_urls"] = parsed_data["product_urls"]
+                result = parsed_data
             else:
                 # If product_urls key not found, store the entire parsed response
-                result["product_urls"] = parsed_data
+                result = parsed_data
         else:
             # If not a string, use as is
-            result["product_urls"] = res
+            result = res
     except json.JSONDecodeError:
         logger.warning("Response is not valid JSON, using raw value")
-        result["product_urls"] = res
+        result = res
     
     # Add metadata
     result["metadata"] = {
@@ -99,7 +99,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
     
     # Scrape the website
-    result = scrape_website(args.url, args.type, args.browser)
+    result = scrape_website(args.url, args.type, True)
     
     # Create output directory if it doesn't exist
     output_dir = Path(args.output)
@@ -109,11 +109,11 @@ def main():
     from urllib.parse import urlparse
     domain = urlparse(args.url).netloc.replace(".", "_")
     output_file = output_dir / f"{domain}.json"
-    
+        
     # Save result to JSON file
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
-    
+        
     logger.info(f"Data saved to {output_file}")
     
     # Print summary

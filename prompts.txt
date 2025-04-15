@@ -7,29 +7,106 @@
 # - Keys should only contain uppercase letters, numbers, and underscores
 
 [EXTRACT_PRODUCT_URLS]
-Extract UAV/UAS-related product URLs in JSON format from the website pages at {url}.
-If available, extract also urls of components for UAV/UAS, like payloads, cameras, radio, etc.
-Fetch all available product URLs.
-Fetch HTML content from all necessary pages to get all product URLs.
-Go deep and fetch internal pages of the website to find all URLs of each products found.
-Return a list of all product page URLs found on the site in JSON format without any additional text.
+Task: Fetch All UAV/UAS Product URLs and Extract Producer Information
+Begin from the provided URL ({url}). Explore the entire website thoroughly, including all internal pages, to find URLs linking directly to UAV/UAS products.
+
+Stop and return blank JSON if no content found.
+
+Recursively parse internal pages to ensure no product URLs are missed.
+Collect all discovered UAV/UAS product URLs, including deeply nested ones.
+Return the complete list of product page URLs clearly formatted in JSON.
+
+Return blank JSON if given website is not a drone producer website.
+
+Additionally, analyze the HTML content of the provided website to extract detailed company information:
+1. Company name
+2. Description in HTML format in English
+3. Social media links
+4. If the company work with military or defence-related clients
+5. Company founding date
+6. Logo URL
+
+Ensure:
+
+Depth-first crawling to guarantee discovery of all relevant product URLs.
+Avoid external URLs; focus solely on the provided domain.
+Return only structured JSON, no additional text.
+Generate result in English.
+
 Result JSON format:
 {
-    "product_urls": [{"url": "<url>", "product_name": "<product_name>"}]
-}
+    "comapny_name": "string",
+    "producer_type": ["UAV Manufacturer", "Component Manufacturer", "Both (UAV & Components)", "C-UAV Producer"],
+    "product_urls": [{"url": "<url>", "product_name": "<product_name>"}],
+    "location": {
+      "country": "Country Name",
+      "city": "City Name",
+      "address": "string"
+    },
+    "military": "true or false",
+    "logo_url": "string",
+    "social_media_links": {
+      "facebook": "https://www.facebook.com/example",
+      "x": "https://x.com/example",
+      "linkedin": "https://www.linkedin.com/company/example"
+    },
+    "year_founded": 2010,
+    "description": "Brief company profile and expertise."
+  }
 
 [PRODUCT_EXTRACTION]
-You are a product information extraction assistant. Analyze the provided HTML content and extract the following details about the product:
+Task: Extract UAV/UAS Product Information from HTML
+UAV/UAS name: {name}
+You are a product information extraction assistant. 
+Analyze the provided HTML content from the {url} and extract the following details about the product:
 1. Product name
 2. Price
-3. Description
+3. Description in HTML format in English. Do not include any images or other external resources.
 4. Features
 5. Specifications
 6. Images URLs
-7. Categories
-8. Brand
-9. Availability
+7. Video URLs
+8. Categories
+9. Brand
+10. Product URL
+11. Additional structured information (if any)
+
 Return the information in JSON format with these fields.
+
+Ensure:
+1. Return only structured JSON, no additional text.
+2. Generate result in English.
+
+JSON example:
+
+{
+    "modelName": "string",
+    "manufacturer": "string",
+    "isUAV": "true or false",
+    "categories": {
+      "byApplication": ["Agriculture", "Military", "Surveillance", "..."],
+      "byType": ["Multirotor", "Fixed-Wing", "Hybrid VTOL", "..."],
+      "byWeightClass": ["Nano", "Micro", "Small", "Medium", "Large"],
+      "bySector": ["Consumer", "Commercial", "Military", "Research & Education"]
+    },
+    "description": "string",
+    "typeDetails": {
+      "mainCategory": "Multirotor",
+      "subType": "Quadcopter"
+    },
+    "videoUrls": ["string"],
+    "imageUrls": ["string"],
+    "features": ["string"],
+    "specifications": {
+       "hardware": [{title: "string", value: "string"}],
+       "flightCharacteristic": [{title: "string", value: "string"}],
+       "payloads": [{title: "string", value: "string"}]
+    },
+    "price": "USD",
+    "yearIntroduced": 2024,
+    "additionalInfo": {}
+  }
+  
 
 [COMPANY_EXTRACTION]
 You are a company information extraction assistant. Analyze the provided HTML content and extract the following details about the company:

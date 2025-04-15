@@ -9,3 +9,4 @@ argparse
 urllib3
 openai-agents
 pydantic>=2.0.0
+redis>=4.5.0

@@ -8,9 +8,16 @@ import json
 import time
 import logging
 import traceback
+import hashlib
+import datetime
 import requests
-from typing import Dict, Optional, List, Any, Tuple
+from typing import Dict, Optional, List, Any, Tuple, Union
 from dotenv import load_dotenv
+from scraper.html_processor import HtmlProcessor
+
+# Import Redis for caching
+import redis
+from redis.exceptions import RedisError
 
 # Load environment variables from .env file
 load_dotenv()
@@ -28,9 +35,9 @@ logging.basicConfig(
 logger.setLevel(logging.DEBUG)
 
 class ZyteClient:
-    """Client for interacting with the Zyte API."""
+    """Client for interacting with the Zyte API with Redis caching."""
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, use_cache: bool = True, redis_url: Optional[str] = None, cache_ttl_days: int = 100):
         """
         Initialize the Zyte API client.
         
@@ -53,27 +60,136 @@ class ZyteClient:
         # API endpoint URL
         self.API_URL = "https://api.zyte.com/v1/extract"
         
+        # Initialize Redis cache connection if enabled
+        self.use_cache = use_cache
+        self.cache_ttl_seconds = cache_ttl_days * 24 * 60 * 60  # Convert days to seconds
+        self.redis_client = None
+        
+        if self.use_cache:
+            try:
+                redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
+                logger.info(f"Initializing Redis cache connection to {redis_url}")
+                self.redis_client = redis.from_url(redis_url)
+                # Test Redis connection
+                self.redis_client.ping()
+                logger.info("Redis cache connection successful")
+            except (RedisError, ConnectionError) as e:
+                logger.warning(f"Failed to connect to Redis: {e}. Caching will be disabled.")
+                self.use_cache = False
+        
         logger.debug("Zyte client initialized successfully")
         
-    def get_html(self, url: str, headers: Optional[Dict] = None, browser: bool = True, timeout: int = 30) -> Optional[str]:
+    def _generate_cache_key(self, url: str, browser: bool) -> str:
+        """Generate a unique cache key based on URL and browser flag."""
+        # Create a key with URL and browser flag to ensure different cache for browser-rendered vs non-browser content
+        key_string = f"{url}:{browser}"
+        # Use MD5 to create a consistent, reasonably short key
+        return f"zyte:html:{hashlib.md5(key_string.encode()).hexdigest()}"
+    
+    def _get_from_cache(self, url: str, browser: bool) -> Optional[Tuple[str, datetime.datetime]]:
+        """Try to get content from Redis cache."""
+        if not self.use_cache or not self.redis_client:
+            return None
+        
+        cache_key = self._generate_cache_key(url, browser)
+        try:
+            cached_data = self.redis_client.get(cache_key)
+            if cached_data:
+                try:
+                    data_dict = json.loads(cached_data)
+                    timestamp_str = data_dict.get('timestamp')
+                    html_content = data_dict.get('content')
+                    
+                    if timestamp_str and html_content:
+                        timestamp = datetime.datetime.fromisoformat(timestamp_str)
+                        logger.info(f"Found cached content for {url} from {timestamp}")
+                        return html_content, timestamp
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.warning(f"Error parsing cached data: {e}")
+        except RedisError as e:
+            logger.warning(f"Redis error when getting from cache: {e}")
+        
+        return None
+    
+    def _save_to_cache(self, url: str, browser: bool, html_content: str) -> bool:
+        """Save content to Redis cache with expiration."""
+        if not self.use_cache or not self.redis_client or not html_content:
+            return False
+        
+        cache_key = self._generate_cache_key(url, browser)
+        timestamp = datetime.datetime.now().isoformat()
+        data_to_cache = {
+            'timestamp': timestamp,
+            'content': html_content
+        }
+        
+        try:
+            cache_data = json.dumps(data_to_cache)
+            self.redis_client.setex(cache_key, self.cache_ttl_seconds, cache_data)
+            logger.info(f"Saved {len(html_content)} bytes to cache for {url}")
+            return True
+        except (RedisError, TypeError) as e:
+            logger.warning(f"Failed to save to cache: {e}")
+            return False
+    
+    def clear_cache(self, url: Optional[str] = None, browser: Optional[bool] = None) -> int:
+        """Clear all cache or just for a specific URL."""
+        if not self.use_cache or not self.redis_client:
+            return 0
+        
+        try:
+            if url and browser is not None:
+                # Clear specific URL cache
+                cache_key = self._generate_cache_key(url, browser)
+                result = self.redis_client.delete(cache_key)
+                logger.info(f"Cleared cache for specific URL: {url}")
+                return result
+            elif url:
+                # Clear both browser and non-browser cache for URL
+                keys_deleted = 0
+                for browser_option in [True, False]:
+                    cache_key = self._generate_cache_key(url, browser_option)
+                    keys_deleted += self.redis_client.delete(cache_key)
+                logger.info(f"Cleared all cache variants for URL: {url}")
+                return keys_deleted
+            else:
+                # Clear all Zyte client cache
+                keys = self.redis_client.keys("zyte:html:*")
+                if keys:
+                    result = self.redis_client.delete(*keys)
+                    logger.info(f"Cleared all Zyte cache ({len(keys)} entries)")
+                    return result
+                return 0
+        except RedisError as e:
+            logger.warning(f"Error clearing cache: {e}")
+            return 0
+    
+    def get_html(self, url: str, headers: Optional[Dict] = None, browser: bool = True, timeout: int = 30, force_refresh: bool = False) -> Optional[str]:
         """
-        Retrieve HTML content from a URL using Zyte API.
+        Retrieve HTML content from a URL using Zyte API with Redis caching.
         
         Args:
             url: The URL to retrieve
             headers: Optional HTTP headers
             browser: Whether to use browser rendering (default: True)
             timeout: Request timeout in seconds (default: 30)
+            force_refresh: Whether to bypass cache and force a new API request (default: False)
             
         Returns:
             HTML content as string or None if request failed
         """
         try:
-            # Log attempt with detailed information
-            logger.debug(f"============================================================")
-            logger.debug(f"ZYTE CLIENT: Fetching URL with Zyte API: {url}")
-            logger.debug(f"ZYTE CLIENT: Browser rendering: {'enabled' if browser else 'disabled'}")
-            logger.debug(f"ZYTE CLIENT: Timeout: {timeout} seconds")
+            # Check cache first if not forced to refresh
+            if not force_refresh:
+                cached_result = self._get_from_cache(url, browser)
+                if cached_result:
+                    html_content, timestamp = cached_result
+                    cache_age = datetime.datetime.now() - timestamp
+                    logger.info(f"Using cached content for {url} (age: {cache_age.days} days, {cache_age.seconds//3600} hours)")
+                    return html_content
+            
+            # If cache miss or force refresh, proceed with API request
+            logger.info(f"Cache miss or force refresh for {url}, fetching from API")
             
             # Create request payload
             payload = {
@@ -89,9 +205,6 @@ class ZyteClient:
             # Add custom headers if provided
             if headers:
                 payload["headers"] = headers
-            
-            # Log the request payload
-            logger.info(f"ZYTE CLIENT: Request payload: {json.dumps(payload, indent=2)}")
             
             # Make the API request
             start_time = time.time()
@@ -124,15 +237,15 @@ class ZyteClient:
                     if html_content:
                         content_length = len(html_content)
                         logger.info(f"ZYTE CLIENT: Retrieved HTML content ({content_length} bytes) from URL: {url}")
-                        # Log a sample of the HTML content for debugging
-                        html_preview = html_content[:200].replace('\n', ' ').strip()
-                        logger.info(f"ZYTE CLIENT: HTML content preview: {html_preview}...")
-                        return html_content
+                        # Process HTML content
+                        processed_html = HtmlProcessor.minimize_html(html_content)
+                        # Save to cache
+                        self._save_to_cache(url, browser, processed_html)
+                        
+                        return processed_html
                     else:
                         available_keys = list(data.keys())
                         logger.warning(f"ZYTE CLIENT: No HTML content found in response. Available keys: {available_keys}")
-                        # Log the full response for debugging
-                        logger.warning(f"ZYTE CLIENT: Full response: {json.dumps(data)[:500]}...")
                         return None
                         
                 except ValueError:

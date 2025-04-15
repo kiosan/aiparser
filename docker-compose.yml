@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   scraper:
@@ -10,3 +9,18 @@ services:
     # Override the entrypoint from Dockerfile to wait for a URL argument
     entrypoint: ["python", "-m", "main"]
     # Add URL argument when running: docker-compose run scraper https://example.com
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  redis_data:
